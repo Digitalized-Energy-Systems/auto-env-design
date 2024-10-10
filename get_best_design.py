@@ -9,7 +9,6 @@ EPSILON = 0.01
 
 
 def main(paths):
-    
     for path in paths:
         if path[-1] == '/':
             path = path[:-1]
@@ -32,7 +31,7 @@ def main(paths):
         # comparison = df[metric_names].to_numpy() <= df[metric_names].values[:, None]
         # TODO: Maybe also create some fuzzy pareto front where solutions are not dominated if some tolerance to dominating solution
         # dominated_mask = (comparison[:, :, 0] & comparison[:, :, 1]).any(axis=1) & (comparison.sum(axis=2) > 1).any(axis=1)
-        df['not_dominated'] = ~df.apply(lambda row: is_dominated(row, df, metric_names, EPSILON), axis=1)
+        df = add_not_dominated_column(df, metric_names, epsilon=EPSILON)
         df = df[df.not_dominated]
         print('Non-dominated: ', df.index.values)
 
@@ -48,11 +47,18 @@ def main(paths):
 
         print('---------------------------------')
 
+
+def add_not_dominated_column(df, metric_names, epsilon_relative=0):
+    epsilon_absolute = epsilon_relative * (df[metric_names].max() - df[metric_names].min())
+    df['not_dominated'] = ~df.apply(lambda row: is_dominated(row, df, metric_names, epsilon_absolute), axis=1)
+    return df
+
+
 def is_dominated(row, df, metric_names, epsilon=0):
     # A point is dominated if there exists at least one point that is better in both objectives
     # TODO: Currently epsilon applied to both. Maybe only apply to one metric. "non-dominated if it is better in at least one objective and not significantly worse in others"
-    return np.any((df[metric_names[0]] <= row[metric_names[0]] - epsilon) & (df[metric_names[1]] <= row[metric_names[1]] - epsilon) & 
-                  ((df[metric_names[0]] < row[metric_names[0]] - epsilon) | (df[metric_names[1]] < row[metric_names[1]] - epsilon)))
+    return np.any((df[metric_names[0]] <= row[metric_names[0]] - epsilon[0]) & (df[metric_names[1]] <= row[metric_names[1]] - epsilon[1]) & 
+                  ((df[metric_names[0]] < row[metric_names[0]] - epsilon[0]) | (df[metric_names[1]] < row[metric_names[1]] - epsilon[1])))
 
 
 if __name__ == '__main__':
