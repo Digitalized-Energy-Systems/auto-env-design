@@ -5,13 +5,15 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import optuna
 import pandas as pd
 
-from get_best_design import add_not_dominated_column
+import pareto_front
 
 
-def main(optuna_path: str, other_paths: tuple, show_all=True, store=True):
+ALLOWED_ERROR = 0.01
+
+
+def main(optuna_path: str, other_paths: tuple, show_all=True, store=False):
     # Load the data
     optuna_df = load_optuna_data(optuna_path)
 
@@ -22,27 +24,46 @@ def main(optuna_path: str, other_paths: tuple, show_all=True, store=True):
     # Plot the data
     metrics = ('invalid share', 'error')
     default_metrics = ['values_' + str(m) for m in range(len(metrics))]
+    metrics = ['values_' + str(m) for m in range(len(metrics))]
 
-    optuna_df[metrics[0]] = optuna_df[default_metrics[0]]
-    optuna_df[metrics[1]] = optuna_df[default_metrics[1]]
+    try:
+        optuna_df[metrics[0]] = optuna_df[default_metrics[0]]
+        optuna_df[metrics[1]] = optuna_df[default_metrics[1]]
+    except KeyError:
+        pass
 
-    # Remove NaN values
+    # Remove NaN values and reset the index
     optuna_df = optuna_df.dropna(subset=list(metrics))
+    optuna_df = optuna_df.reset_index(drop=True)
 
-    allowed_error = 0.1
-    optuna_df = add_not_dominated_column(optuna_df, list(metrics), epsilon_relative=allowed_error)
+    print(optuna_df)
+
+    # Create columns of normalized metrics
+    normalized_metrics = [m + '_normalized' for m in metrics]
+    for metric, normalized_metric in zip(metrics, normalized_metrics):
+        optuna_df[normalized_metric] = (optuna_df[metric] - optuna_df[metric].min()) / (
+                optuna_df[metric].max() - optuna_df[metric].min())
+
+    optuna_df['non_dominated'] = pareto_front.compute_pareto_front(optuna_df[metrics])
+    optuna_df['fuzzy_dominated'] = pareto_front.compute_fuzzy_dominance(optuna_df[normalized_metrics], optuna_df['non_dominated'], ALLOWED_ERROR)
 
     fig = plt.figure()
     # Plot Pareto front solutions
-    for idx, row in enumerate(optuna_df[optuna_df.not_dominated].iterrows()):
+    for idx, row in enumerate(optuna_df[optuna_df.non_dominated].iterrows()):
         label = 'Non-dominated' if idx==0 else None
         plt.plot(row[1][metrics[0]], row[1][metrics[1]], 'ro', label=label)
 
     # Plot dominated solutions
     if show_all:
-        for idx, row in enumerate(optuna_df[~optuna_df.not_dominated].iterrows()):
+        for idx, row in enumerate(optuna_df[~optuna_df.non_dominated].iterrows()):
             label = 'Dominated' if idx==0 else None
             plt.plot(row[1][metrics[0]], row[1][metrics[1]], 'bo', label=label)
+
+    # Plot fuzzy dominated solutions
+    if show_all:
+        for idx, row in enumerate(optuna_df[optuna_df.fuzzy_dominated].iterrows()):
+            label = 'Fuzzy dominated' if idx==0 else None
+            plt.plot(row[1][metrics[0]], row[1][metrics[1]], 'yo', label=label)
 
     # Plot other experiments as comparison
     for idx, other_df in enumerate(other_dfs):
