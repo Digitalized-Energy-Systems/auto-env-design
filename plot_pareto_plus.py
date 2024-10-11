@@ -12,7 +12,7 @@ from util import load_optuna_csv, load_drl_csv
 ALLOWED_ERROR = (0.0, 0.0004)
 
 
-def main(optuna_path: str, other_paths: tuple, show_all=True, store=False):
+def main(optuna_path: str, other_paths: tuple, show_all=True, store=True):
     # Load the data
     optuna_df = load_optuna_csv(optuna_path)
 
@@ -21,9 +21,8 @@ def main(optuna_path: str, other_paths: tuple, show_all=True, store=False):
         other_dfs.append(load_drl_csv(other_path))
 
     # Plot the data
-    metrics = ('invalid share', 'error')
+    metrics = ('values_Invalid share', 'values_Mean error')
     default_metrics = ['values_' + str(m) for m in range(len(metrics))]
-    metrics = ['values_' + str(m) for m in range(len(metrics))]
 
     try:
         optuna_df[metrics[0]] = optuna_df[default_metrics[0]]
