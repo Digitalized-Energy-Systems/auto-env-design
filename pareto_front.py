@@ -69,7 +69,10 @@ def compute_fuzzy_dominance_single(df, pareto_front, epsilon):
     2. The shortest distance to the line connecting the Pareto front points is less than or equal to epsilon.
     """
     fuzzy_dominated_mask = np.zeros(df.shape[0], dtype=bool)
-    pareto_points = df[pareto_front].values  # Non-dominated points (Pareto front)
+
+    # Extract non-dominated points (Pareto front) and sort them
+    pareto_points = df[pareto_front].values
+    pareto_points = pareto_points[pareto_points[:, 0].argsort()]
 
     for i, row in df.iterrows():
         if not ~pareto_front[i]:  # Only check for dominated points
@@ -84,6 +87,12 @@ def compute_fuzzy_dominance_single(df, pareto_front, epsilon):
             # Calculate distance from the point to the current segment
             distance_to_segment = point_to_segment_distance(row.values, segment_start, segment_end)
             min_distance = min(min_distance, distance_to_segment)
+
+        # Special case: Only one point on pareto front
+        if len(pareto_points) == 1:
+            segment_start = pareto_points[0]
+            segment_end = pareto_points[0]
+            min_distance = point_to_segment_distance(row.values, segment_start, segment_end)
 
         # If the minimum distance to the Pareto front is <= epsilon, mark as fuzzy dominated
         if min_distance <= epsilon:
