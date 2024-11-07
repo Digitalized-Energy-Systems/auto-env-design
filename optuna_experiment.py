@@ -38,6 +38,12 @@ def custom_multi_obj_metric(eval_metrics):
     return invalid_share, valid_regret
 
 
+def custom_multi_obj_metric_all_regret(eval_metrics):
+    invalid_share = 1 - np.mean([m['valid_share_possible'] for m in eval_metrics])
+    regret = np.mean([m['regret'] for m in eval_metrics])
+    return invalid_share, regret
+
+
 class custom_single_obj_metric_safe():
     def __init__(self,
                  env_name='default',
@@ -128,15 +134,14 @@ def opf_env_design_sampling(trial):
 
     # Data distribution
     remaining_share = 1
-    share_hps = ['simbench_share', 'uniform_share', 'normal_share']
-    random.shuffle(share_hps)
+    share_hps = ['simbench_share', 'normal_share', 'uniform_share']
+    total = 0
     for idx, share in enumerate(share_hps):
-        # Constraint: sum of shares must be 1
-        if idx == 2:
-            hps[share] = trial.suggest_float(share, remaining_share, remaining_share)
-        else:
-            hps[share] = trial.suggest_float(share, 0, remaining_share)
-            remaining_share -= hps[share]
+        hps[share] = trial.suggest_float(share, 0, 1)
+        total += hps[share]
+    # Need to be constrained to sum of 1 -> Approximate Dirichlet Distribution
+    for idx, share in enumerate(share_hps):
+        hps[share] /= total
     simbench = hps['simbench_share']
     uniform = simbench + hps['uniform_share']
     normal = uniform + hps['normal_share']
@@ -186,7 +191,7 @@ def opf_env_design_sampling_safe(trial):
     # Reward function params
     # Valid reward not possible here because the cost function must not flip sign
     # hps['valid_reward'] = trial.suggest_float('valid_reward', 0.0, 2.0)
-    hps['invalid_penalty'] = trial.suggest_float('invalid_penalty', 0.0, 2.0)
+    hps['invalid_penalty'] = trial.suggest_float('invalid_penalty', 0.0, 3.0)
     # hps['objective_share'] = trial.suggest_float('objective_share', 0.0, 1.0)
     hps['reward_function_params'] = dict()
     # hps['reward_function_params']['valid_reward'] = hps['valid_reward']
@@ -201,7 +206,7 @@ def opf_algo_hp_sampling_safe(trial):
     hps = dict()
 
     # USL-SAC-specific HPs
-    hps['penalty_factor'] = trial.suggest_float('penalty_factor', 0.5, 5, log=True)
+    hps['penalty_factor'] = trial.suggest_float('penalty_factor', 0.5, 10, log=True)
     hps['max_projection_iterations'] = trial.suggest_int('max_projection_iterations', 1, 20)
     hps['extra_cost_critic'] = trial.suggest_categorical('extra_cost_critic', [True, False])
     # hps['use_correction_optimizer'] = trial.suggest_categorical('use_correction_optimizer', [True, False])
@@ -243,15 +248,15 @@ def opf_algo_hp_sampling_safe(trial):
 
 # Multi-objective: optuna.samplers.NSGAIIISampler() or default (None)
 # Single_objective: optuna.samplers.GPSampler(n_startup_trials=10)
-main(sampler=None,
-        env_hp_sampling_method=opf_env_design_sampling_safe,
-        hp_sampling_method=opf_algo_hp_sampling_safe,
-        metric=custom_single_obj_metric_safe(),
+main(sampler=optuna.samplers.NSGAIIISampler(),
+        env_hp_sampling_method=opf_env_design_sampling,
+        hp_sampling_method=None, # opf_algo_hp_sampling_safe,
+        metric=custom_multi_obj_metric, # (env_name='load'),
         storage=True,
         load_if_exists=True,
-        # directions=["minimize", "minimize"],
-        direction='minimize',
+        directions=["minimize", "minimize"],
+        # direction='minimize',
         n_seeds=3,
-        median=True,
-        last_n_steps=3)
-        # pruner=optuna.pruners.PercentilePruner(50.0, n_startup_trials=10, n_warmup_steps=1))
+        # median=False,
+        last_n_steps=4,
+        pruner=optuna.pruners.PercentilePruner(50.0, n_startup_trials=999, n_warmup_steps=4))
