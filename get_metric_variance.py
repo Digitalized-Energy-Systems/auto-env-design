@@ -19,7 +19,12 @@ def get_metric_variance(path: str):
         if not os.path.isdir(full_path):
             continue
 
-        df = load_drl_csv(full_path)
+        print(f'Processing {full_path}')
+
+        try:
+            df = load_drl_csv(full_path)
+        except (FileNotFoundError, NotADirectoryError):
+            continue
 
         mean_error = df['valid_regret'].mean()
         mean_invalids = 1 - df['valid_share_possible'].mean()
@@ -35,17 +40,20 @@ def get_metric_variance(path: str):
     all_invalids = list(all_invalids.values())
 
     # Compute standard deviation per metric for all experiments
-    mean_std_error = np.mean([np.std(l) for l in all_errors])
-    mean_std_invalids = np.mean([np.std(l) for l in all_invalids])
+    std_error = [np.std(l) for l in all_errors]
+    mean_std_error = np.mean([std for std in std_error if not np.isnan(std)])
+    std_invalids = [np.std(l) for l in all_invalids]
+    mean_std_invalids = np.mean([std for std in std_invalids if not np.isnan(std)])
 
     print(f'Mean std error: {mean_std_error}')
     print(f'Mean std invalid share: {mean_std_invalids}')
+    print('standard deviations error:', (mean_std_invalids, mean_std_error))
 
     # Compute min and max per metric for all experiments
-    min_error = np.min([np.mean(l) for l in all_errors])
-    max_error = np.max([np.mean(l) for l in all_errors])
-    min_invalids = np.min([np.mean(l) for l in all_invalids])
-    max_invalids = np.max([np.mean(l) for l in all_invalids])
+    min_error = np.min([np.mean(l) for l in all_errors if not np.isnan(np.mean(l))])
+    max_error = np.max([np.mean(l) for l in all_errors if not np.isnan(np.mean(l))])
+    min_invalids = np.min([np.mean(l) for l in all_invalids if not np.isnan(np.mean(l))])
+    max_invalids = np.max([np.mean(l) for l in all_invalids if not np.isnan(np.mean(l))])
 
     # Compute relative std per metric for all experiments
     rel_std_error = mean_std_error / (max_error - min_error)
