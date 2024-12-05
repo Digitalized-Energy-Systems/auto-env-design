@@ -131,15 +131,24 @@ def filter_by_utopia(df, best_n=10):
     return df.head(best_n), df.iloc[best_n:]
 
 
-def get_best_design(df, bottom_df):
+def get_best_design(df, bottom_df, continuous_to_n_bins: int=None):
     print('Number of considered designs: ', len(df))
     best_design_continuous = []
     best_design_discrete = []
-    design_decisions = [c for c in df.columns if "params_" in c]
 
-    for param in design_decisions:
-        # Compute mean and std for continuous values
+    # Treat continuous values as discrete by putting them into buckets
+    # Probably not necessary because ttest does not compare the averages (which was the motivation for this) but compares the distributions
+    for param in [c for c in df.columns if "params_" in c]:
+        if isinstance(df[param].iloc[0], float) and continuous_to_n_bins:
+            full_df = pd.concat([df, bottom_df])
+            bins = np.linspace(full_df[param].min(), full_df[param].max(), continuous_to_n_bins+1)
+            # Add new columns with discretized values
+            df[param + '_discrete'] = pd.cut(df[param], bins, labels=False, include_lowest=True)
+            bottom_df[param + '_discrete'] = pd.cut(bottom_df[param], bins, labels=False, include_lowest=True)
+
+    for param in [c for c in df.columns if "params_" in c]:
         if isinstance(df[param].iloc[0], float):
+            # Compute mean and std for continuous values
             overutilization = df[param].mean() / bottom_df[param].mean()
             # Test for statistical significance (is the distribution different from the overall distribution?)
             t, p_value = ttest_ind(df[param], bottom_df[param], equal_var=False)  # assumption: unequal variance
@@ -168,7 +177,11 @@ def get_best_design(df, bottom_df):
     best_design_discrete = pd.DataFrame(best_design_discrete)
 
     for df in (best_design_continuous, best_design_discrete):
-        df['Significant'] = df['p-value'] < 0.05
+        try:
+            df['significant'] = df['p-value'] < 0.05
+        except KeyError:
+            # Dataframe is empty
+            pass
 
     return best_design_continuous, best_design_discrete
 
@@ -179,9 +192,7 @@ def pprint_best_design(best_design_continuous, best_design_discrete, name='Best 
     print(best_design_continuous)
     print('Discrete:')
     print(best_design_discrete)
-    total = len(best_design_continuous) + len(best_design_discrete)
-    significance = best_design_continuous['Significant'].sum() + best_design_discrete['Significant'].sum()
-    mean_significance = significance / total
+    mean_significance = compute_significance_share(best_design_discrete, best_design_continuous)
     print('Overall significance: ', mean_significance)
     print('---------------------------------')
 
@@ -204,7 +215,7 @@ def alternative_statistical_significance(df, metrics):
                 rest_df = df[df[param] <= top_50_percentile]
                 # Test for statistical significance
                 t, p_value = ttest_ind(top_df[metric], rest_df[metric], equal_var=False)
-                data = {'Parameter': param[7:], 'Mean': df[param].mean(), 'Std': df[param].std(), 'p-value': p_value, 'Significant': p_value < 0.05}
+                data = {'Parameter': param[7:], 'Mean': df[param].mean(), 'Std': df[param].std(), 'p-value': p_value, 'significant': p_value < 0.05}
                 continuous_design_decisions.append(data)
             else:
                 # Discrete
@@ -213,7 +224,7 @@ def alternative_statistical_significance(df, metrics):
                 rest_df = df[df[param] != most_used_category]
                 # Test for statistical significance
                 t, p_value = ttest_ind(most_used_df[metric], rest_df[metric], equal_var=False)
-                data = {'Parameter': param[7:], 'Most Used': most_used_category, 'p-value': p_value, 'Significant': p_value < 0.05}
+                data = {'Parameter': param[7:], 'Most Used': most_used_category, 'p-value': p_value, 'significant': p_value < 0.05}
                 discrete_design_decisions.append(data)
 
         print(metric)
@@ -222,6 +233,12 @@ def alternative_statistical_significance(df, metrics):
         print('Discrete:')
         print(pd.DataFrame(discrete_design_decisions))
         print('---------------------------------')
+
+
+def compute_significance_share(df_discrete, df_continuous):
+    """ Compute the share of significant design decisions """
+    total = len(df_discrete) + len(df_continuous)
+    return (df_discrete['significant'].sum() + df_continuous['significant'].sum()) / total
 
 
 if __name__ == '__main__':
