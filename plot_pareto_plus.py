@@ -179,14 +179,14 @@ def plot_full_annotated_variant2(
         if store_as == 'tikz':
             tikzplotlib.save(name + ".tikz")
         else:
-            plt.savefig(name + '.pdf', format='pdf')
+            plt.savefig(name, format=store_as)
 
     plt.close()
 
 
 def plot_single_annotated(optuna_df: str | pd.DataFrame, top_n: int=20,
                           store_as=None, baseline_paths: list[str]=None,
-                          add_error_bar=True):
+                          add_annotations=False, add_error_bar=True):
     """ Plot pareto front, highlight areas of interest (constraint focus,
     objective focus, utopia), and annotate the areas with the the prevalent
     environment design decisions. """
@@ -209,38 +209,39 @@ def plot_single_annotated(optuna_df: str | pd.DataFrame, top_n: int=20,
     if add_error_bar:
         add_std_dev_annotation_to_plot(optuna_path)
 
-    # Highlight and annotate areas of interest
-    # Constraint focus: Vertical line to highlight the min top_n data points
-    top_df, bottom_df = get_best_design.filter_by_constraints(optuna_df, top_n)
-    plt.axvline(x=top_df[metrics[0]].max(), color='g', linestyle='--', linewidth=LINEWIDTH)
-    x_position = top_df[metrics[0]].min() + (top_df[metrics[0]].max() - top_df[metrics[0]].min()) / 2
-    y_position = ax.get_ylim()[0] + (ax.get_ylim()[1] - ax.get_ylim()[0]) / 2
-    add_annotation_to_plot('Constraints:', x_position, y_position, top_df, bottom_df)
+    if add_annotations:
+        # Highlight and annotate areas of interest
+        # Constraint focus: Vertical line to highlight the min top_n data points
+        top_df, bottom_df = get_best_design.filter_by_constraints(optuna_df, top_n)
+        plt.axvline(x=top_df[metrics[0]].max(), color='g', linestyle='--', linewidth=LINEWIDTH)
+        x_position = top_df[metrics[0]].min() + (top_df[metrics[0]].max() - top_df[metrics[0]].min()) / 2
+        y_position = ax.get_ylim()[0] + (ax.get_ylim()[1] - ax.get_ylim()[0]) / 2
+        add_annotation_to_plot('Constraints:', x_position, y_position, top_df, bottom_df)
 
-    # Objective focus: Horizontal line to highlight the min top_n data points
-    top_df, bottom_df = get_best_design.filter_by_objective(optuna_df, top_n)
-    plt.axhline(y=top_df[metrics[1]].max(), color='r', linestyle='--', linewidth=LINEWIDTH)
-    x_position = ax.get_xlim()[0] + (ax.get_xlim()[1] - ax.get_xlim()[0]) / 2
-    y_position = top_df[metrics[1]].min() + (top_df[metrics[1]].max() - top_df[metrics[1]].min()) / 2
-    add_annotation_to_plot('Objective:', x_position, y_position, top_df, bottom_df)
+        # Objective focus: Horizontal line to highlight the min top_n data points
+        top_df, bottom_df = get_best_design.filter_by_objective(optuna_df, top_n)
+        plt.axhline(y=top_df[metrics[1]].max(), color='r', linestyle='--', linewidth=LINEWIDTH)
+        x_position = ax.get_xlim()[0] + (ax.get_xlim()[1] - ax.get_xlim()[0]) / 2
+        y_position = top_df[metrics[1]].min() + (top_df[metrics[1]].max() - top_df[metrics[1]].min()) / 2
+        add_annotation_to_plot('Objective:', x_position, y_position, top_df, bottom_df)
 
-    # Pareto focus: box in the middle to highlight the pareto data points
-    top_df, bottom_df = get_best_design.filter_by_pareto(optuna_df)
-    x_position = ax.get_xlim()[0] + (ax.get_xlim()[1] - ax.get_xlim()[0]) / 2
-    y_position = ax.get_ylim()[0] + (ax.get_ylim()[1] - ax.get_ylim()[0]) / 2
-    add_annotation_to_plot('Pareto:', x_position, y_position, top_df, bottom_df)
+        # Pareto focus: box in the middle to highlight the pareto data points
+        top_df, bottom_df = get_best_design.filter_by_pareto(optuna_df)
+        x_position = ax.get_xlim()[0] + (ax.get_xlim()[1] - ax.get_xlim()[0]) / 2
+        y_position = ax.get_ylim()[0] + (ax.get_ylim()[1] - ax.get_ylim()[0]) / 2
+        add_annotation_to_plot('Pareto:', x_position, y_position, top_df, bottom_df)
 
-    # Utopia focus: box in bottom left to highlight the min top_n data points
-    top_df, bottom_df = get_best_design.filter_by_utopia(optuna_df, top_n)
-    vertices = (
-        (ax.get_xlim()[0], top_df[metrics[1]].max()),  # Top left
-        (top_df[metrics[0]].max(), top_df[metrics[1]].max()),  # Top right
-        (top_df[metrics[0]].max(), ax.get_ylim()[0])  # Bottom right
-    )
-    ax.add_patch(patches.Polygon(vertices, closed=False, edgecolor='blue', facecolor='none', linestyle='--', linewidth=LINEWIDTH))
-    x_position = ax.get_xlim()[0] + (ax.get_xlim()[1] - ax.get_xlim()[0]) / 10
-    y_position = ax.get_ylim()[0] + (ax.get_ylim()[1] - ax.get_ylim()[0]) / 10
-    add_annotation_to_plot('Utopia:', x_position, y_position, top_df, bottom_df)
+        # Utopia focus: box in bottom left to highlight the min top_n data points
+        top_df, bottom_df = get_best_design.filter_by_utopia(optuna_df, top_n)
+        vertices = (
+            (ax.get_xlim()[0], top_df[metrics[1]].max()),  # Top left
+            (top_df[metrics[0]].max(), top_df[metrics[1]].max()),  # Top right
+            (top_df[metrics[0]].max(), ax.get_ylim()[0])  # Bottom right
+        )
+        ax.add_patch(patches.Polygon(vertices, closed=False, edgecolor='blue', facecolor='none', linestyle='--', linewidth=LINEWIDTH))
+        x_position = ax.get_xlim()[0] + (ax.get_xlim()[1] - ax.get_xlim()[0]) / 10
+        y_position = ax.get_ylim()[0] + (ax.get_ylim()[1] - ax.get_ylim()[0]) / 10
+        add_annotation_to_plot('Utopia:', x_position, y_position, top_df, bottom_df)
 
     add_labels_and_legend_to_plot()
 
@@ -249,12 +250,15 @@ def plot_single_annotated(optuna_df: str | pd.DataFrame, top_n: int=20,
     else:
         path = os.path.dirname(optuna_path.rstrip('/'))
         name = optuna_path.split('/')[-2] if isinstance(optuna_path, str) else 'plot'
-        name = os.path.join(path, name + '_annotated')
+        if add_annotations:
+            name = os.path.join(path, name + '_annotated')
+        else:
+            name = os.path.join(path, name + '_plain')
         print('Store to:', name)
         if store_as == 'tikz':
             tikzplotlib.save(name + ".tikz")
         else:
-            plt.savefig(name + '.pdf', format='pdf')
+            plt.savefig(f'{name}.{store_as}', format=store_as)
 
     plt.close()
 
@@ -299,8 +303,8 @@ def add_normalized_metrics_columns(df, metrics):
 
 def plot_dominated_points(full_df,
                           metrics,
-                          remove_x_bottom_range: float=None,
-                          remove_y_bottom_range: float=None,
+                          remove_x_bottom_range: float=0.5,
+                          remove_y_bottom_range: float=0.5,
                           **kwargs):
     overall_condition = ~full_df.non_dominated
     if remove_x_bottom_range:
@@ -344,7 +348,8 @@ def add_annotation_to_plot(header: str, x_position: float, y_position: float, to
         annotation = header + '\n' + 'No significant design decisions'
     else:
         annotation = header + '\n' + annotation[:-1]
-    plt.text(x_position, y_position, annotation, fontsize=6, color='k', ha='center', va='center')
+    plt.text(x_position, y_position, annotation, fontsize=6, color='k', ha='center', va='center',
+                 bbox=dict(facecolor='lightgrey', edgecolor='black', alpha=0.8, boxstyle='round,pad=1'))
     # plt.annotate(annotation,
     #              (x_position, y_position),
     #              textcoords="offset points",
@@ -399,11 +404,11 @@ def add_std_dev_annotation_to_plot(optuna_path):
 
 
 if __name__ == '__main__':
-    envs = ['voltage', 'eco', 'renewable', 'load', 'qmarket']
+    envs = ['qmarket'] # ['voltage', 'eco', 'renewable', 'load', 'qmarket']
     # plot_pareto_plus(f'data/20240906_{env}_multi', (f'data/comparison2/{env}_default_50k_09',f'data/comparison2/{env}_default_50k'))
     # plot_single_annotated(f'HPC/auto_env_design/data/20241126_multi_GA_reduced/{env}/')
     paths = [f'HPC/auto_env_design/data/20241128_multi_GA_reduced/{env}/' for env in envs]
     for idx, env in enumerate(envs):
-        base_paths = [f'HPC/auto_env_design/data/20241203_baseline/{env}_{weight}' for weight in ['05', '08']]
+        base_paths = [f'HPC/auto_env_design/data/20241203_baseline/{env}_{weight}' for weight in ['02', '05', '08']]
         plot_single_annotated(paths[idx], store_as='pdf', baseline_paths=base_paths)
-    plot_full_annotated_variant2(paths, store_as='pdf')
+    # plot_full_annotated_variant2(paths, store_as='pdf')

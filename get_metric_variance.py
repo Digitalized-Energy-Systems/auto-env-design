@@ -1,6 +1,4 @@
 
-import collections
-import json
 import os
 
 import numpy as np
@@ -66,4 +64,4 @@ def get_metric_std_dev(path: str):
 
 
 if __name__ == '__main__':
-    get_metric_variance('HPC/auto_env_design/data/20240906_renewable_multi/')
+    get_metric_std_dev('HPC/auto_env_design/data/20240906_renewable_multi/')
