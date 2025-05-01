@@ -4,7 +4,7 @@ import os
 import optuna
 import numpy as np
 import pandas as pd
-from scipy.stats import ttest_ind, mannwhitneyu, chi2_contingency
+from scipy.stats import ttest_ind, mannwhitneyu, chi2_contingency, chi2
 
 import pareto_front
 
@@ -98,7 +98,6 @@ def main(paths, env_names, variant, store=True):
         one_path_lower = os.path.split(path)[0]
         best_design_continuous.to_csv(f'{one_path_lower}/best_design_continuous_{variant}.csv')
         best_design_discrete.to_csv(f'{one_path_lower}/best_design_discrete_{variant}.csv')
-
 
 
 def filter_by_pareto(df) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -239,6 +238,48 @@ def compute_significance_share(df_discrete, df_continuous):
     """ Compute the share of significant design decisions """
     total = len(df_discrete) + len(df_continuous)
     return (df_discrete['significant'].sum() + df_continuous['significant'].sum()) / total
+
+
+def compute_combined_p_values(top_dfs: list, bottom_dfs: list) -> dict:
+    """ Combine p-values of multiple tests """
+    all_p_values = {}
+    best_designs = [get_best_design(top_df, bottom_df) for top_df, bottom_df in zip(top_dfs, bottom_dfs)]
+
+    continuous_best_designs = [d[0] for d in best_designs]
+    discrete_best_designs = [d[1] for d in best_designs]
+
+    for idx, param in enumerate(continuous_best_designs[0]['Parameter']):
+        p_values = [df.at[idx, 'p-value'] for df in continuous_best_designs]
+        overutilizations = [df.at[idx, 'Overutilization'] for df in continuous_best_designs]
+        means = [df.at[idx, 'Mean'] for df in continuous_best_designs]
+        p_value = fishers_method(p_values)
+        if p_value < 0.05:
+            all_p_values[param] = {'p-value': p_value,
+                                'mean': np.mean(means),
+                                'overutilization': np.mean(overutilizations)}
+
+    for idx, param in enumerate(discrete_best_designs[0]['Parameter']):
+        p_values = [df.at[idx, 'p-value'] for df in discrete_best_designs]
+        # Unclear how to do the same here?!
+        p_value = fishers_method(p_values)
+        if p_value < 0.05:
+            most_used_per_env = [df.at[idx, 'Most Used'] for df in discrete_best_designs]
+            single_most_used = max(set(most_used_per_env), key=most_used_per_env.count)
+            all_p_values[param] = {'p-value': p_value,
+                                   'most_used': single_most_used}
+
+    import pdb; pdb.set_trace()
+
+    return all_p_values
+
+
+def fishers_method(p_values):
+    """ Combine p-values using Fisher's method """
+    chi2_values = [-2 * np.log(p) for p in p_values]
+    chi2_value = sum(chi2_values)
+    degrees_of_freedom = 2 * len(p_values)
+    combined_p_value = 1 - chi2.cdf(chi2_value, degrees_of_freedom)
+    return combined_p_value
 
 
 if __name__ == '__main__':

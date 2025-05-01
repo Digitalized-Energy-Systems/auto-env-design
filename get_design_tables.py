@@ -62,6 +62,9 @@ def create_significance_table(
         data['Mean'] = np.mean([data[env[0] + criterion] for env in env_names for criterion in criteria])
         significance_df = significance_df.append(data, ignore_index=True)
 
+    # Sort table by 'Mean' column
+    significance_df = significance_df.sort_values(by='Mean', ascending=False)
+
     mean_significance = {column: significance_df[column].mean()
                          for column in significance_df.columns
                          if column != 'Design Decision'}
