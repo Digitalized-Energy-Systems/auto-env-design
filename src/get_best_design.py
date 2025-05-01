@@ -282,9 +282,9 @@ def fishers_method(p_values):
     return combined_p_value
 
 
-if __name__ == '__main__':
-    env_names = ('voltage', 'qmarket', 'load')  # 'eco', 'load', 'renewable', 
-    paths = [f'HPC/auto_env_design/data/20241121_multi_GA_full/{env_name}' for env_name in env_names]
+# if __name__ == '__main__':
+#     env_names = ('voltage', 'qmarket', 'load')  # 'eco', 'load', 'renewable', 
+#     paths = [f'HPC/auto_env_design/data/20241121_multi_GA_full/{env_name}' for env_name in env_names]
 
-    for variant in VARIANTS:
-        main(paths, env_names, variant)
+#     for variant in VARIANTS:
+#         main(paths, env_names, variant)

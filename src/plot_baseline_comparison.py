@@ -1,3 +1,8 @@
+"""
+Create plots for final verification experiments. (Figure 6 in the paper)
+
+"""
+
 import os
 
 import matplotlib.pyplot as plt
@@ -6,8 +11,10 @@ import numpy as np
 
 from drl.util import plot_returns
 
+
 def float_formatter(x, pos):
     return f'{x:.1f}'  # Format tick labels as floats with 1 decimal place
+
 
 def plot_baseline_comparison(best_path, base_path, y_column='valid_regret', 
                              plot_std=True, rolling_window=2, store_as=None):
@@ -71,7 +78,7 @@ def plot_baseline_comparison(best_path, base_path, y_column='valid_regret',
 
     if store_as:
         # plt.tight_layout()
-        name = f'auto-env-design/figures/{name}_{y_column}.{store_as}'
+        name = f'figures/{name}_{y_column}.{store_as}'
         print('Store to', name)
         plt.savefig(name, format=store_as, bbox_inches='tight')
     else:
@@ -79,14 +86,13 @@ def plot_baseline_comparison(best_path, base_path, y_column='valid_regret',
 
 
 if __name__ == '__main__':
-    store_as = "pdf"
-
-    best_path = "HPC/auto_env_design/data/20241223_best_design_500k/env_algo_best_alldata/"
-    base_path = "HPC/auto_env_design/data/20241223_best_design_500k/env_algo_base_alldata/"
+    best_path = "data/20241223_best_design_500k/env_algo_best_alldata/"
+    base_path = "data/20241223_best_design_500k/env_algo_base_alldata/"
     for env in ('voltage', 'eco'):
         for y_column in ['valid_regret', 'valid_share_possible']:
             plot_baseline_comparison(
                 best_path.replace('/env', '/'+env),
                 base_path.replace('/env', '/'+env),
                 y_column=y_column,
-                store_as=store_as)
+                store_as="pdf"
+            )

@@ -1,4 +1,5 @@
-""" Get a set of environment design decisions to directly start new experiments. """
+""" Get the best N found environment designs and compute the mean as an 
+approximation of the overall best design. """
 
 import json
 
@@ -89,6 +90,6 @@ def convert_to_hyperparameters(best_design: dict) -> dict:
 
 
 if __name__ == '__main__':
-    env_name = 'renewable'
-    path = f'HPC/auto_env_design/data/20241128_multi_GA_reduced/{env_name}/'
-    get_single_best_design(optuna_path=path, mean_of_top_n=5)
+    for env_name in ('renewable', 'load', 'eco', 'qmarket', 'voltage'):
+        path = f'data/20241128_multi_GA_reduced/{env_name}/'
+        get_single_best_design(optuna_path=path, mean_of_top_n=5)

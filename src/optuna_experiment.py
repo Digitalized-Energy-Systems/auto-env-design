@@ -1,3 +1,12 @@
+
+"""
+Define the optuna hyperparameter (env design) sampling and optimization.
+Note: Contains multiple env design decisions that turned out to to be not relevant,
+e.g. data augmentation methods like interpolate_steps or noise_factor.
+See the OPF-Gym docs for more details on these parameters.
+
+"""
+
 import random
 
 import numpy as np
@@ -109,7 +118,6 @@ def opf_env_design_sampling(trial):
 
 
 # Multi-objective: optuna.samplers.NSGAIIISampler() or default (None)
-# Single_objective: optuna.samplers.GPSampler(n_startup_trials=10)
 main(
     sampler=optuna.samplers.NSGAIIISampler(),
     env_hp_sampling_method=opf_env_design_sampling,

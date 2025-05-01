@@ -1,5 +1,8 @@
-""" Manual plot of the pareto front of an optuna experiment plus some other 
-experiments for comparison. """
+""" Manual plot of the pareto front of an optuna experiment plus some other
+experiments for comparison. Used for Figs 2/3 of the paper.
+
+Note: Minor adjustments in line 209 to improve plot readability.
+"""
 
 import copy
 import os
@@ -13,8 +16,6 @@ import pandas as pd
 import get_best_design
 from get_metric_variance import get_metric_std_dev
 from util import load_optuna_csv, load_drl_csv, load_optuna_data
-
-# TODO: Currently, in the combined plot, the envs with more pareto points have more weigth in the plot -> normalize somehow?!
 
 
 LINEWIDTH = 1.0
@@ -208,8 +209,8 @@ def plot_single_annotated(optuna_df: str | pd.DataFrame, top_n: int=20,
 
     # Plot pareto front data points
     plot_dominated_points(optuna_df, metrics,
-                          remove_y_bottom_range=0.2,  # set 0.2 to remove outliers in ['eco', 'load', 'qmarket'] 
-                          remove_x_bottom_range=0.5)  # set 0.5 for 'qmarket' to remove outliers
+                          remove_y_bottom_range=None,  # set 0.2 to remove outliers in ['eco', 'load', 'qmarket'] 
+                          remove_x_bottom_range=None)  # set 0.5 for 'qmarket' to remove outliers
     if add_fuzzy_dominated:
         plot_fuzzy_dominated_points(optuna_df, metrics)
     plot_pareto_points(optuna_df, metrics)
@@ -398,10 +399,10 @@ def add_std_dev_to_plot(invalid_share_std, valid_error_std):
 
 
 if __name__ == '__main__':
-    envs = ['qmarket']  # ['voltage', 'eco', 'renewable', 'load', 'qmarket']
-    paths = [f'HPC/auto_env_design/data/20241128_multi_GA_reduced/{env}/' for env in envs]
+    envs = ['voltage', 'eco', 'renewable', 'load', 'qmarket']
+    paths = [f'data/20241128_multi_GA_reduced/{env}/' for env in envs]
     for idx, env in enumerate(envs):
-        base_paths = [f'HPC/auto_env_design/data/20241203_baseline/{env}_{weight}' for weight in ['01',  '03', '05', '07', '09']] # , '03', '05', '07', '09'
+        base_paths = [f'data/20241203_baseline/{env}_{weight}' for weight in ['01',  '03', '05', '07', '09']] # , '03', '05', '07', '09'
         plot_single_annotated(paths[idx],
                               store_as='pdf',
                               baseline_paths=base_paths,

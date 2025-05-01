@@ -119,31 +119,31 @@ def compute_fuzzy_dominance_multiple(df, pareto_front, epsilons):
     return fuzzy_dominated_mask
 
 
-def main():
-    # Sample data
-    data = {
-        'metric1': [1, 2, 3, 4, 5, 3, 2, 1, 4, 5, 5],
-        'metric2': [5, 4, 3, 2, 1, 2, 3, 4, 1, 2, 5]
-    }
+# def main():
+#     # Sample data
+#     data = {
+#         'metric1': [1, 2, 3, 4, 5, 3, 2, 1, 4, 5, 5],
+#         'metric2': [5, 4, 3, 2, 1, 2, 3, 4, 1, 2, 5]
+#     }
 
-    df = pd.DataFrame(data)
+#     df = pd.DataFrame(data)
 
-    # Step 1: Compute Pareto dominance
-    pareto_mask = compute_pareto_front(df)
+#     # Step 1: Compute Pareto dominance
+#     pareto_mask = compute_pareto_front(df)
 
-    # Step 2: Add a 'dominated' column (inverse of Pareto mask)
-    df['dominated'] = ~pareto_mask
+#     # Step 2: Add a 'dominated' column (inverse of Pareto mask)
+#     df['dominated'] = ~pareto_mask
 
-    # Step 3: Compute fuzzy dominance with epsilon
-    epsilon = 1  # Example value for epsilon
-    fuzzy_dominated_mask = compute_fuzzy_dominance(df[['metric1', 'metric2']], pareto_mask, epsilon)
+#     # Step 3: Compute fuzzy dominance with epsilon
+#     epsilon = 1  # Example value for epsilon
+#     fuzzy_dominated_mask = compute_fuzzy_dominance(df[['metric1', 'metric2']], pareto_mask, epsilon)
 
-    # Step 4: Add 'fuzzy_dominated' column
-    df['fuzzy_dominated'] = fuzzy_dominated_mask
+#     # Step 4: Add 'fuzzy_dominated' column
+#     df['fuzzy_dominated'] = fuzzy_dominated_mask
 
-    # Display result
-    print(df)
+#     # Display result
+#     print(df)
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()

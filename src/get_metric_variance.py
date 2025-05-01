@@ -2,7 +2,6 @@
 import os
 
 import numpy as np
-import pandas as pd
 
 from util import load_drl_csv
 
@@ -57,11 +56,9 @@ def get_metric_std_dev(path: str):
     # print(f'Relative std error: {rel_std_error}')
     # print(f'Relative std invalid share: {rel_std_invalids}')
 
-    # Compute std per metric only for non-dominated runs
-    # TODO
-
     return mean_std_invalids, mean_std_error
 
 
 if __name__ == '__main__':
-    get_metric_std_dev('HPC/auto_env_design/data/20240906_renewable_multi/')
+    # Test run
+    get_metric_std_dev('data/20241128_multi_GA_reduced/eco/')
