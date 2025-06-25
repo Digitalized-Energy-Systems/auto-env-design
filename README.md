@@ -1,6 +1,7 @@
 # A General Approach of Automated Environment Design for Learning the Optimal Power Flow
 
-This is the accompanying repository to the publication **A General Approach of Automated Environment Design for Learning the Optimal Power Flow** 
+This is the accompanying repository to the publication [A General Approach of Automated Environment Design for Learning the Optimal Power Flow](https://dl.acm.org/doi/full/10.1145/3679240.3734626)
+published at the ACM e-Energy 2025
 by [Thomas Wolgast](https://orcid.org/0000-0002-9042-9964)
 and [Astrid Nieße](https://orcid.org/0000-0003-1881-9172).
 
